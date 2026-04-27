@@ -99,7 +99,12 @@ export default function Home() {
 
             const hasBlockedConflict = listBlockedHours.includes(horaStr)
 
-            if (!hasBookedConflict && !hasBlockedConflict && horaFimReq <= endStr) {
+            // NOVA TRAVA: Se for HOJE, não permitir horários que já passaram no relógio
+            const isToday = formData.data === format(new Date(), 'yyyy-MM-dd')
+            const nowStr = format(new Date(), 'HH:mm')
+            const isPastTime = isToday && horaStr <= nowStr
+
+            if (!hasBookedConflict && !hasBlockedConflict && !isPastTime && horaFimReq <= endStr) {
               slots.push(horaStr)
             }
             current = addMinutes(current, step)
