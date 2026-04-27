@@ -389,7 +389,19 @@ export default function Admin() {
                 <option value="all">👥 Todos os Barbeiros</option>
                 {barbeiros.map(b => <option key={b.id} value={b.id}>💈 {b.nome}</option>)}
               </select>
-              <button onClick={() => { setEditMode(false); setShowAddManual(!showAddManual) }} className="btn btn-outline" style={{ width: 'auto', background: 'rgba(212,175,55,0.1)' }}><PlusCircle size={18} /> Novo</button>
+              <button onClick={() => { 
+                setEditMode(false)
+                if (!showAddManual) {
+                  // Garante que os valores padrão estejam definidos ao abrir o formulário
+                  setManualBooking(prev => ({
+                    ...prev,
+                    barbeiro_id: prev.barbeiro_id || barbeiros[0]?.id || '',
+                    servico_id: prev.servico_id || servicos[0]?.id || '',
+                    hora: ''
+                  }))
+                }
+                setShowAddManual(!showAddManual) 
+              }} className="btn btn-outline" style={{ width: 'auto', background: 'rgba(212,175,55,0.1)' }}><PlusCircle size={18} /> Novo</button>
               <button onClick={handleShareAgenda} className="btn btn-primary" style={{ background: '#25d366', color: 'white', width: 'auto' }}><Share2 size={18} /> WhatsApp</button>
             </div>
           </div>
