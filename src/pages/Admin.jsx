@@ -30,6 +30,9 @@ export default function Admin() {
   // Modal de Avisos
   const [modal, setModal] = useState({ show: false, title: '', message: '', type: 'info' })
   
+  // Filtro de Agenda
+  const [filterBarbeiroId, setFilterBarbeiroId] = useState('all')
+  
   // Agendamento Manual / Edição
   const [showAddManual, setShowAddManual] = useState(false)
   const [editMode, setEditMode] = useState(false)
@@ -111,13 +114,22 @@ export default function Admin() {
   }
 
   const handleShareAgenda = () => {
-    if (appointments.length === 0) return setModal({ show: true, title: 'Agenda Vazia', message: 'Nenhum agendamento para este dia.', type: 'info' })
-    let text = `📋 *AGENDA DO DIA: ${format(new Date(date + 'T12:00:00'), 'dd/MM/yyyy')}*\n\n`
-    appointments.forEach(a => {
+    let filtered = appointments
+    if (filterBarbeiroId !== 'all') {
+      filtered = appointments.filter(a => a.barbeiro_id === filterBarbeiroId)
+    }
+
+    if (filtered.length === 0) return setModal({ show: true, title: 'Agenda Vazia', message: 'Nenhum agendamento encontrado para compartilhar.', type: 'info' })
+    
+    const bNome = filterBarbeiroId === 'all' ? 'GERAL' : filtered[0]?.barbeiros?.nome
+    let text = `📋 *AGENDA ${bNome}: ${format(new Date(date + 'T12:00:00'), 'dd/MM/yyyy')}*\n\n`
+    
+    filtered.forEach(a => {
       const cleanPhone = a.cliente_whatsapp.replace(/\D/g, '')
       const waLink = `https://wa.me/55${cleanPhone}`
-      text += `⏰ ${a.hora} - *${a.cliente_nome}*\n✂️ ${a.servico_nome}\n💈 Barbeiro: ${a.barbeiros?.nome}\n📱 Whats: ${waLink}\n-------------------\n`
+      text += `⏰ ${a.hora} - *${a.cliente_nome}*\n✂️ ${a.servico_nome}${filterBarbeiroId === 'all' ? ` (💈 ${a.barbeiros?.nome})` : ''}\n📱 Whats: ${waLink}\n-------------------\n`
     })
+
     const phone = whatsappCentral.replace(/\D/g, '')
     window.open(`https://wa.me/${phone.startsWith('55') ? phone : '55'+phone}?text=${encodeURIComponent(text)}`)
   }
@@ -316,7 +328,11 @@ export default function Admin() {
           <div className="card mb-4">
             <h3 className="mb-2">📅 Gestão da Agenda</h3>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ flex: '1 1 200px' }} />
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ flex: '1 1 150px' }} />
+              <select value={filterBarbeiroId} onChange={e => setFilterBarbeiroId(e.target.value)} style={{ flex: '1 1 150px' }}>
+                <option value="all">👥 Todos os Barbeiros</option>
+                {barbeiros.map(b => <option key={b.id} value={b.id}>💈 {b.nome}</option>)}
+              </select>
               <button onClick={() => { setEditMode(false); setShowAddManual(!showAddManual) }} className="btn btn-outline" style={{ width: 'auto', background: 'rgba(212,175,55,0.1)' }}><PlusCircle size={18} /> Novo</button>
               <button onClick={handleShareAgenda} className="btn btn-primary" style={{ background: '#25d366', color: 'white', width: 'auto' }}><Share2 size={18} /> WhatsApp</button>
             </div>
@@ -344,7 +360,9 @@ export default function Admin() {
               <button onClick={handleAddManualBooking} className="btn btn-primary" disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</button>
             </div>
           )}
-          {appointments.length === 0 ? <p className="text-center py-6 opacity-50">Nenhum agendamento.</p> : appointments.map(a => (
+          {(filterBarbeiroId === 'all' ? appointments : appointments.filter(a => a.barbeiro_id === filterBarbeiroId)).length === 0
+            ? <p className="text-center py-6 opacity-50">Nenhum agendamento.</p>
+            : (filterBarbeiroId === 'all' ? appointments : appointments.filter(a => a.barbeiro_id === filterBarbeiroId)).map(a => (
             <div key={a.id} className="card" style={{ borderLeft: '4px solid var(--primary)', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div><strong>{a.hora} - {a.cliente_nome}</strong><p style={{ margin: '4px 0' }}>{a.servico_nome} | 💈 {a.barbeiros?.nome}</p></div>
