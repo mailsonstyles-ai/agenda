@@ -365,7 +365,11 @@ export default function Admin() {
             : (filterBarbeiroId === 'all' ? appointments : appointments.filter(a => a.barbeiro_id === filterBarbeiroId)).map(a => (
             <div key={a.id} className="card" style={{ borderLeft: '4px solid var(--primary)', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div><strong>{a.hora} - {a.cliente_nome}</strong><p style={{ margin: '4px 0' }}>{a.servico_nome} | 💈 {a.barbeiros?.nome}</p></div>
+                <div>
+                  <strong>{a.hora} - {a.cliente_nome}</strong>
+                  <p style={{ margin: '4px 0' }}>{a.servico_nome} | 💈 {a.barbeiros?.nome}</p>
+                  <p style={{ margin: '2px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>📱 {formatPhone(a.cliente_whatsapp)}</p>
+                </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={() => handleEditAppointment(a)} className="btn btn-outline" style={{ width: 'auto', padding: '0.5rem', borderColor: 'var(--primary)' }}><Pencil size={18} color="var(--primary)" /></button>
                   <button onClick={() => window.open(`https://wa.me/55${a.cliente_whatsapp.replace(/\D/g, '')}`)} className="btn btn-outline" style={{ width: 'auto', padding: '0.5rem', borderColor: '#25d366' }}><MessageCircle size={18} color="#25d366" /></button>
