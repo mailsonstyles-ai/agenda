@@ -143,6 +143,13 @@ export default function Home() {
 
   const finalizeBooking = async () => {
     setLoading(true)
+    
+    // Atualiza ou insere o cliente com o nome mais recente informado
+    await supabase.from('clientes').upsert({ 
+      whatsapp: formData.cliente_whatsapp, 
+      nome: formData.cliente_nome 
+    })
+
     const { error } = await supabase.from('agendamentos').insert([{
       cliente_nome: formData.cliente_nome,
       cliente_whatsapp: formData.cliente_whatsapp,
