@@ -708,20 +708,61 @@ export default function Admin() {
             </div>
           </div>
           <div className="card">
-            <h3>📋 Ativos</h3>
+            <h3>📋 Bloqueios Ativos</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-                {allBloqueiosDias.map(b => (
-                  <div key={b.id} className="card" style={{ margin: 0, border: '1px solid var(--danger)', background: 'rgba(239, 68, 68, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div><strong>DIA TODO</strong><br />{format(new Date(b.data + 'T12:00:00'), 'dd/MM/yyyy')}</div>
-                    <Trash2 size={16} onClick={() => deleteBloqueioDia(b.id)} style={{ cursor: 'pointer' }} />
+              {/* Dias inteiros bloqueados */}
+              {allBloqueiosDias.map(b => (
+                <div key={b.id} className="card" style={{ margin: 0, border: '1px solid var(--danger)', background: 'rgba(239, 68, 68, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div><strong>DIA TODO</strong><br />{format(new Date(b.data + 'T12:00:00'), 'dd/MM/yyyy')}</div>
+                  <Trash2 size={16} onClick={() => deleteBloqueioDia(b.id)} style={{ cursor: 'pointer', color: 'var(--danger)' }} />
+                </div>
+              ))}
+
+              {/* Intervalos de horas agrupados por data */}
+              {(() => {
+                // Agrupa horários consecutivos por data em intervalos
+                const byDate = {}
+                allBloqueiosHoras.forEach(bh => {
+                  if (!byDate[bh.data]) byDate[bh.data] = []
+                  byDate[bh.data].push(bh)
+                })
+
+                const groups = []
+                Object.entries(byDate).forEach(([data, horas]) => {
+                  const sorted = [...horas].sort((a, b) => a.hora.localeCompare(b.hora))
+                  let group = [sorted[0]]
+                  for (let i = 1; i < sorted.length; i++) {
+                    const prev = parse(sorted[i - 1].hora, 'HH:mm', new Date())
+                    const curr = parse(sorted[i].hora, 'HH:mm', new Date())
+                    const diffMin = (curr - prev) / 60000
+                    if (diffMin <= 60) {
+                      group.push(sorted[i])
+                    } else {
+                      groups.push({ data, items: group })
+                      group = [sorted[i]]
+                    }
+                  }
+                  groups.push({ data, items: group })
+                })
+
+                return groups.map((g, idx) => (
+                  <div key={idx} className="card" style={{ margin: 0, border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239, 68, 68, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ color: 'var(--danger)' }}>🕐 {g.items[0].hora} às {g.items[g.items.length - 1].hora}</strong>
+                      <p style={{ margin: '2px 0', fontSize: '0.8rem', opacity: 0.7 }}>{format(new Date(g.data + 'T12:00:00'), 'dd/MM/yyyy')} • {g.items.length} slot(s)</p>
+                    </div>
+                    <Trash2 size={16} onClick={async () => {
+                      const ids = g.items.map(i => i.id)
+                      await supabase.from('bloqueios_horarios').delete().in('id', ids)
+                      fetchData()
+                    }} style={{ cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }} />
                   </div>
-                ))}
-                {allBloqueiosHoras.map(bh => (
-                  <div key={bh.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '5px 10px', borderRadius: '5px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>{bh.hora} ({format(new Date(bh.data + 'T12:00:00'), 'dd/MM')})</span>
-                    <Trash2 size={14} onClick={() => deleteBloqueioHora(bh.id)} style={{ cursor: 'pointer', color: 'var(--danger)' }} />
-                  </div>
-                ))}
+                ))
+              })()}
+
+              {allBloqueiosDias.length === 0 && allBloqueiosHoras.length === 0 && (
+                <p className="text-center opacity-50" style={{ gridColumn: '1 / -1' }}>Nenhum bloqueio ativo.</p>
+              )}
             </div>
           </div>
         </div>
