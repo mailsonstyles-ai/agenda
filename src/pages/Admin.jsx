@@ -319,10 +319,10 @@ export default function Admin() {
       const allDaysData = [0, 1, 2, 3, 4, 5, 6].map(dia => ({
         barbeiro_id: selectedBarbeiro,
         dia_semana: dia,
-        inicio_1: bulkHours.inicio_1,
-        fim_1: bulkHours.fim_1,
-        inicio_2: bulkHours.inicio_2,
-        fim_2: bulkHours.fim_2,
+        inicio_1: bulkHours.ativo_1 !== false ? bulkHours.inicio_1 : null,
+        fim_1:    bulkHours.ativo_1 !== false ? bulkHours.fim_1    : null,
+        inicio_2: bulkHours.ativo_2 !== false ? bulkHours.inicio_2 : null,
+        fim_2:    bulkHours.ativo_2 !== false ? bulkHours.fim_2    : null,
         is_aberto: selectedDays.includes(dia)
       }))
       await supabase.from('expediente').insert(allDaysData)
@@ -645,14 +645,37 @@ export default function Admin() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '1.5rem' }}>
               {DIAS_SEMANA.map((dia, idx) => (<button key={idx} onClick={() => selectedDays.includes(idx) ? setSelectedDays(selectedDays.filter(d => d !== idx)) : setSelectedDays([...selectedDays, idx])} className={`btn ${selectedDays.includes(idx) ? 'btn-primary' : 'btn-outline'}`} style={{ padding: '0.5rem', fontSize: '0.75rem' }}>{dia}</button>))}
             </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
+              ℹ️ Configure abaixo os <strong>turnos de atendimento</strong> para os dias selecionados. Se o profissional trabalha apenas em um turno, <strong>desmarque o outro</strong> clicando no checkbox — os horários desse turno não serão exibidos para agendamento.
+            </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <div className="card" style={{ margin: 0, padding: '1rem' }}>
-                <label>🌅 TURNO 1</label>
-                <div style={{ display: 'flex', gap: '8px' }}><input type="time" value={bulkHours.inicio_1} onChange={e => setBulkHours({...bulkHours, inicio_1: e.target.value})} /><input type="time" value={bulkHours.fim_1} onChange={e => setBulkHours({...bulkHours, fim_1: e.target.value})} /></div>
+              {/* Turno 1 */}
+              <div className="card" style={{ margin: 0, padding: '1rem', opacity: bulkHours.ativo_1 ? 1 : 0.4, transition: 'opacity 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <label style={{ fontWeight: '600' }}>🌅 TURNO 1</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                    <input type="checkbox" checked={bulkHours.ativo_1 !== false} onChange={e => setBulkHours({...bulkHours, ativo_1: e.target.checked})} style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }} />
+                    Ativo
+                  </label>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input type="time" value={bulkHours.inicio_1} onChange={e => setBulkHours({...bulkHours, inicio_1: e.target.value})} disabled={bulkHours.ativo_1 === false} />
+                  <input type="time" value={bulkHours.fim_1} onChange={e => setBulkHours({...bulkHours, fim_1: e.target.value})} disabled={bulkHours.ativo_1 === false} />
+                </div>
               </div>
-              <div className="card" style={{ margin: 0, padding: '1rem' }}>
-                <label>🌇 TURNO 2</label>
-                <div style={{ display: 'flex', gap: '8px' }}><input type="time" value={bulkHours.inicio_2} onChange={e => setBulkHours({...bulkHours, inicio_2: e.target.value})} /><input type="time" value={bulkHours.fim_2} onChange={e => setBulkHours({...bulkHours, fim_2: e.target.value})} /></div>
+              {/* Turno 2 */}
+              <div className="card" style={{ margin: 0, padding: '1rem', opacity: bulkHours.ativo_2 ? 1 : 0.4, transition: 'opacity 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <label style={{ fontWeight: '600' }}>🌇 TURNO 2</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                    <input type="checkbox" checked={bulkHours.ativo_2 !== false} onChange={e => setBulkHours({...bulkHours, ativo_2: e.target.checked})} style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }} />
+                    Ativo
+                  </label>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input type="time" value={bulkHours.inicio_2} onChange={e => setBulkHours({...bulkHours, inicio_2: e.target.value})} disabled={bulkHours.ativo_2 === false} />
+                  <input type="time" value={bulkHours.fim_2} onChange={e => setBulkHours({...bulkHours, fim_2: e.target.value})} disabled={bulkHours.ativo_2 === false} />
+                </div>
               </div>
             </div>
             <button onClick={handleSaveBulkExpediente} className="btn btn-primary mt-6"><Save /> Salvar</button>
