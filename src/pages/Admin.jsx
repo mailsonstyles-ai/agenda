@@ -105,7 +105,7 @@ export default function Admin() {
 
   // Expediente em massa
   const [selectedDays, setSelectedDays] = useState([])
-  const [bulkHours, setBulkHours] = useState({ inicio_1: '08:00', fim_1: '12:00', inicio_2: '14:00', fim_2: '19:00', is_aberto: true })
+  const [bulkHours, setBulkHours] = useState({ inicio_1: '08:00', fim_1: '12:00', inicio_2: '14:00', fim_2: '19:00', is_aberto: true, ativo_1: true, ativo_2: true })
   
   // Central de Bloqueios
   const [allBloqueiosDias, setAllBloqueiosDias] = useState([])
