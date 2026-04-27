@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { Calendar, Clock, Copy, MessageCircle, RefreshCw, Trash2, ChevronLeft, Users, List, UserPlus, Settings, Check, Plus, Save, CalendarDays, Ban, Scissors, AlertCircle, Share2, Phone, X, AlertTriangle, PlusCircle, Pencil, Search } from 'lucide-react'
+import { Calendar, Clock, Copy, MessageCircle, RefreshCw, Trash2, ChevronLeft, Users, List, UserPlus, Settings, Check, Plus, Save, CalendarDays, Ban, Scissors, AlertCircle, Share2, Phone, X, AlertTriangle, PlusCircle, Pencil, Search, LogOut } from 'lucide-react'
 import { format, addMinutes, parse, isAfter, isBefore, getDay } from 'date-fns'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 export default function Admin() {
   const [tab, setTab] = useState('agenda') 
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const navigate = useNavigate()
+  
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate('/login')
+  }
   const [barbeiros, setBarbeiros] = useState([])
   const [servicos, setServicos] = useState([])
   const [clientes, setClientes] = useState([])
@@ -286,7 +292,12 @@ export default function Admin() {
       <header className="mb-6">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1>Painel Admin</h1>
-          <Link to="/" className="btn btn-outline" style={{ width: 'auto' }}>Ver Site</Link>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Link to="/" className="btn btn-outline" style={{ width: 'auto' }}>Ver Site</Link>
+            <button onClick={handleLogout} className="btn btn-outline" style={{ width: 'auto', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+              <LogOut size={18} /> Sair
+            </button>
+          </div>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1.5rem' }}>
           <button onClick={() => setTab('agenda')} className={`btn ${tab === 'agenda' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>📋 Agenda</button>
