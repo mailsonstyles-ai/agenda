@@ -55,23 +55,23 @@ export default function Admin() {
       if (!manualBooking.barbeiro_id || !manualBooking.servico_id || !manualBooking.data) return
       setManualSlotsLoading(true)
       try {
-        const servico = servicos.find(s => s.id === manualBooking.servico_id)
-        if (!servico) return
-        const duracao = servico.duracao_minutos
-        const diaSemana = getDay(new Date(manualBooking.data + 'T12:00:00'))
+        // Busca duração do serviço direto do banco (evita stale closure)
+        const { data: servicoData } = await supabase.from('servicos').select('duracao_minutos').eq('id', manualBooking.servico_id).maybeSingle()
+        if (!servicoData) { setManualSlots([]); setManualSlotsLoading(false); return }
+        const duracao = servicoData.duracao_minutos
 
+        const diaSemana = getDay(new Date(manualBooking.data + 'T12:00:00'))
         const { data: exp } = await supabase.from('expediente').select('*').eq('barbeiro_id', manualBooking.barbeiro_id).eq('dia_semana', diaSemana).maybeSingle()
         if (!exp || !exp.is_aberto) { setManualSlots([]); setManualSlotsLoading(false); return }
 
         const { data: bloq } = await supabase.from('bloqueios').select('id').eq('barbeiro_id', manualBooking.barbeiro_id).eq('data', manualBooking.data).maybeSingle()
         if (bloq) { setManualSlots([]); setManualSlotsLoading(false); return }
 
-        const { data: booked } = await supabase.from('agendamentos').select('hora, duracao_servico').eq('barbeiro_id', manualBooking.barbeiro_id).eq('data', manualBooking.data)
+        const { data: booked } = await supabase.from('agendamentos').select('hora, duracao_servico, id').eq('barbeiro_id', manualBooking.barbeiro_id).eq('data', manualBooking.data)
         const { data: blockedHours } = await supabase.from('bloqueios_horarios').select('hora').eq('barbeiro_id', manualBooking.barbeiro_id).eq('data', manualBooking.data)
         const listBlockedHours = blockedHours?.map(bh => bh.hora) || []
 
         const slots = []
-        const step = duracao
 
         const generateFromPeriod = (startStr, endStr) => {
           let current = parse(startStr, 'HH:mm', new Date())
@@ -80,13 +80,13 @@ export default function Admin() {
             const horaStr = format(current, 'HH:mm')
             const horaFimReq = format(addMinutes(current, duracao), 'HH:mm')
             const hasBookedConflict = booked?.some(b => {
+              if (editingId && b.id === editingId) return false // ignora o próprio agendamento ao editar
               const bEnd = format(addMinutes(parse(b.hora, 'HH:mm', new Date()), b.duracao_servico), 'HH:mm')
-              const editingOwnSlot = editingId && appointments.find(a => a.id === editingId)?.hora === horaStr
-              return !editingOwnSlot && (horaStr < bEnd && horaFimReq > b.hora)
+              return horaStr < bEnd && horaFimReq > b.hora
             })
             const hasBlockedConflict = listBlockedHours.includes(horaStr)
             if (!hasBookedConflict && !hasBlockedConflict && horaFimReq <= endStr) slots.push(horaStr)
-            current = addMinutes(current, step)
+            current = addMinutes(current, duracao)
           }
         }
 
@@ -95,12 +95,13 @@ export default function Admin() {
         setManualSlots([...new Set(slots)])
       } catch (err) {
         console.error('Erro ao calcular slots manuais:', err)
+        setManualSlots([])
       } finally {
         setManualSlotsLoading(false)
       }
     }
     if (showAddManual) calcManualSlots()
-  }, [manualBooking.barbeiro_id, manualBooking.servico_id, manualBooking.data, showAddManual])
+  }, [manualBooking.barbeiro_id, manualBooking.servico_id, manualBooking.data, showAddManual, editingId])
 
   // Expediente em massa
   const [selectedDays, setSelectedDays] = useState([])
