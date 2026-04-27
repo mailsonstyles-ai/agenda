@@ -145,10 +145,10 @@ export default function Home() {
     setLoading(true)
     
     // Atualiza ou insere o cliente com o nome mais recente informado
-    await supabase.from('clientes').upsert({ 
-      whatsapp: formData.cliente_whatsapp, 
-      nome: formData.cliente_nome 
-    })
+    await supabase.from('clientes').upsert(
+      { whatsapp: formData.cliente_whatsapp, nome: formData.cliente_nome },
+      { onConflict: 'whatsapp' }
+    )
 
     const { error } = await supabase.from('agendamentos').insert([{
       cliente_nome: formData.cliente_nome,
@@ -229,7 +229,10 @@ export default function Home() {
                   <button onClick={async () => { 
                     if (!formData.cliente_nome) return;
                     setLoading(true);
-                    await supabase.from('clientes').upsert({ whatsapp: formData.cliente_whatsapp, nome: formData.cliente_nome }); 
+                    await supabase.from('clientes').upsert(
+                      { whatsapp: formData.cliente_whatsapp, nome: formData.cliente_nome },
+                      { onConflict: 'whatsapp' }
+                    ); 
                     setLoading(false);
                     setCurrentStep(3); 
                   }} className="btn btn-primary mt-4" disabled={loading}>Confirmar Nome</button>
@@ -307,10 +310,10 @@ export default function Home() {
                                 const cleanPhone = whatsappCentral.replace(/\D/g, '')
                                 
                                 // Atualiza o nome do cliente na base principal também ao entrar na espera
-                                await supabase.from('clientes').upsert({ 
-                                  whatsapp: formData.cliente_whatsapp, 
-                                  nome: formData.cliente_nome 
-                                })
+                                await supabase.from('clientes').upsert(
+                                  { whatsapp: formData.cliente_whatsapp, nome: formData.cliente_nome },
+                                  { onConflict: 'whatsapp' }
+                                )
 
                                 const { error } = await supabase.from('lista_espera').insert([{
                                   cliente_nome: formData.cliente_nome,
