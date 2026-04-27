@@ -46,7 +46,62 @@ export default function Admin() {
     cliente_nome: '',
     cliente_whatsapp: ''
   })
-  
+  const [manualSlots, setManualSlots] = useState([])
+  const [manualSlotsLoading, setManualSlotsLoading] = useState(false)
+
+  // Calcula horários disponíveis para o agendamento manual
+  useEffect(() => {
+    async function calcManualSlots() {
+      if (!manualBooking.barbeiro_id || !manualBooking.servico_id || !manualBooking.data) return
+      setManualSlotsLoading(true)
+      try {
+        const servico = servicos.find(s => s.id === manualBooking.servico_id)
+        if (!servico) return
+        const duracao = servico.duracao_minutos
+        const diaSemana = getDay(new Date(manualBooking.data + 'T12:00:00'))
+
+        const { data: exp } = await supabase.from('expediente').select('*').eq('barbeiro_id', manualBooking.barbeiro_id).eq('dia_semana', diaSemana).maybeSingle()
+        if (!exp || !exp.is_aberto) { setManualSlots([]); setManualSlotsLoading(false); return }
+
+        const { data: bloq } = await supabase.from('bloqueios').select('id').eq('barbeiro_id', manualBooking.barbeiro_id).eq('data', manualBooking.data).maybeSingle()
+        if (bloq) { setManualSlots([]); setManualSlotsLoading(false); return }
+
+        const { data: booked } = await supabase.from('agendamentos').select('hora, duracao_servico').eq('barbeiro_id', manualBooking.barbeiro_id).eq('data', manualBooking.data)
+        const { data: blockedHours } = await supabase.from('bloqueios_horarios').select('hora').eq('barbeiro_id', manualBooking.barbeiro_id).eq('data', manualBooking.data)
+        const listBlockedHours = blockedHours?.map(bh => bh.hora) || []
+
+        const slots = []
+        const step = duracao
+
+        const generateFromPeriod = (startStr, endStr) => {
+          let current = parse(startStr, 'HH:mm', new Date())
+          const end = parse(endStr, 'HH:mm', new Date())
+          while (isBefore(current, end)) {
+            const horaStr = format(current, 'HH:mm')
+            const horaFimReq = format(addMinutes(current, duracao), 'HH:mm')
+            const hasBookedConflict = booked?.some(b => {
+              const bEnd = format(addMinutes(parse(b.hora, 'HH:mm', new Date()), b.duracao_servico), 'HH:mm')
+              const editingOwnSlot = editingId && appointments.find(a => a.id === editingId)?.hora === horaStr
+              return !editingOwnSlot && (horaStr < bEnd && horaFimReq > b.hora)
+            })
+            const hasBlockedConflict = listBlockedHours.includes(horaStr)
+            if (!hasBookedConflict && !hasBlockedConflict && horaFimReq <= endStr) slots.push(horaStr)
+            current = addMinutes(current, step)
+          }
+        }
+
+        if (exp.inicio_1 && exp.fim_1) generateFromPeriod(exp.inicio_1, exp.fim_1)
+        if (exp.inicio_2 && exp.fim_2) generateFromPeriod(exp.inicio_2, exp.fim_2)
+        setManualSlots([...new Set(slots)])
+      } catch (err) {
+        console.error('Erro ao calcular slots manuais:', err)
+      } finally {
+        setManualSlotsLoading(false)
+      }
+    }
+    if (showAddManual) calcManualSlots()
+  }, [manualBooking.barbeiro_id, manualBooking.servico_id, manualBooking.data, showAddManual])
+
   // Expediente em massa
   const [selectedDays, setSelectedDays] = useState([])
   const [bulkHours, setBulkHours] = useState({ inicio_1: '08:00', fim_1: '12:00', inicio_2: '14:00', fim_2: '19:00', is_aberto: true })
@@ -344,9 +399,22 @@ export default function Admin() {
                 <select value={manualBooking.barbeiro_id} onChange={e => setManualBooking({...manualBooking, barbeiro_id: e.target.value})}>{barbeiros.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}</select>
                 <select value={manualBooking.servico_id} onChange={e => setManualBooking({...manualBooking, servico_id: e.target.value})}>{servicos.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}</select>
               </div>
-              <div className="grid-2 mb-4">
-                <input type="date" value={manualBooking.data} onChange={e => setManualBooking({...manualBooking, data: e.target.value})} />
-                <input type="time" value={manualBooking.hora} onChange={e => setManualBooking({...manualBooking, hora: e.target.value})} />
+              <div className="mb-4">
+                <input type="date" value={manualBooking.data} onChange={e => setManualBooking({...manualBooking, data: e.target.value, hora: ''})} className="mb-3" />
+                {manualSlotsLoading ? (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>🔍 Buscando horários disponíveis...</p>
+                ) : manualSlots.length === 0 ? (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--danger)', textAlign: 'center' }}>⚠️ Sem horários disponíveis para este barbeiro nesta data.</p>
+                ) : (
+                  <>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Selecione o horário:</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+                      {manualSlots.map(slot => (
+                        <button key={slot} onClick={() => setManualBooking({...manualBooking, hora: slot})} className={`btn ${manualBooking.hora === slot ? 'btn-primary' : 'btn-outline'}`} style={{ padding: '0.4rem', fontSize: '0.8rem' }}>{slot}</button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
               <div className="card" style={{ background: 'rgba(255,255,255,0.02)', margin: '0 0 1.5rem' }}>
                 <select className="mb-3" value={manualBooking.cliente_id} onChange={e => setManualBooking({...manualBooking, cliente_id: e.target.value})}>
