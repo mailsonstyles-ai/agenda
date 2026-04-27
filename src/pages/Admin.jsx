@@ -368,38 +368,33 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Barra de Navegação Mobile Profissional */}
+        {/* Barra de Navegação - Grade 4x2 (todos visíveis) */}
         <div style={{
-          display: 'flex',
-          overflowX: 'auto',
-          gap: '0',
-          marginTop: '1.25rem',
-          borderBottom: '2px solid rgba(255,255,255,0.07)',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitOverflowScrolling: 'touch'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '6px',
+          marginTop: '1.25rem'
         }}>
           {[
-            { key: 'agenda',     label: 'Agenda',     icon: '📋' },
-            { key: 'espera',     label: 'Espera',     icon: '⏳' },
-            { key: 'clientes',   label: 'Clientes',   icon: '👥' },
-            { key: 'servicos',   label: 'Serviços',   icon: '✂️' },
-            { key: 'barbeiros',  label: 'Barbeiros',  icon: '🧔' },
-            { key: 'expediente', label: 'Expediente', icon: '📅' },
-            { key: 'bloqueios',  label: 'Bloqueios',  icon: '🚫' },
-            { key: 'ajustes',    label: 'Ajustes',    icon: '⚙️' },
+            { key: 'agenda',     label: 'Agenda',    icon: '📋' },
+            { key: 'espera',     label: 'Espera',    icon: '⏳' },
+            { key: 'clientes',   label: 'Clientes',  icon: '👥' },
+            { key: 'servicos',   label: 'Serviços',  icon: '✂️' },
+            { key: 'barbeiros',  label: 'Barbeiros', icon: '🧔' },
+            { key: 'expediente', label: 'Expedien.', icon: '📅' },
+            { key: 'bloqueios',  label: 'Bloqueios', icon: '🚫' },
+            { key: 'ajustes',    label: 'Ajustes',   icon: '⚙️' },
           ].map(({ key, label, icon }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
               style={{
-                flexShrink: 0,
-                background: 'transparent',
-                border: 'none',
-                borderBottom: tab === key ? '3px solid var(--primary)' : '3px solid transparent',
-                color: tab === key ? 'var(--primary)' : 'var(--text-muted)',
-                padding: '0.6rem 1rem',
-                fontSize: '0.82rem',
+                background: tab === key ? 'var(--primary)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${tab === key ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}`,
+                borderRadius: '10px',
+                color: tab === key ? '#000' : 'var(--text-muted)',
+                padding: '0.5rem 0.25rem',
+                fontSize: '0.72rem',
                 fontWeight: tab === key ? '700' : '400',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
@@ -408,10 +403,9 @@ export default function Admin() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '3px',
-                marginBottom: '-2px'
               }}
             >
-              <span style={{ fontSize: '1.1rem' }}>{icon}</span>
+              <span style={{ fontSize: '1rem' }}>{icon}</span>
               <span>{label}</span>
             </button>
           ))}
