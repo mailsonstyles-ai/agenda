@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { Calendar, Clock, Scissors, User, Phone, CheckCircle, MessageCircle, ArrowRight, ArrowLeft, RefreshCw, Star, X, Ban, Users, AlertCircle } from 'lucide-react'
+import { Calendar, Clock, Scissors, User, Phone, CheckCircle, MessageCircle, ArrowRight, ArrowLeft, RefreshCw, Star, X, Ban, Users, AlertCircle, Share2 } from 'lucide-react'
 import { format, addMinutes, parse, isAfter, isBefore, isEqual, getDay } from 'date-fns'
 
 export default function Home() {
@@ -26,6 +26,9 @@ export default function Home() {
     hora: ''
   })
 
+  const [showInstallNotice, setShowInstallNotice] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -37,6 +40,15 @@ export default function Home() {
         if (configData) {
           setWhatsappCentral(configData.whatsapp_central)
           setAvisoTexto(configData.aviso_texto || '')
+        }
+
+        // Lógica PWA
+        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches
+        const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream
+        setIsIOS(ios)
+        const hasDismissed = localStorage.getItem('pwa_notice_dismissed')
+        if (!isStandalone && !hasDismissed) {
+          setTimeout(() => setShowInstallNotice(true), 3000)
         }
       } catch (err) {
         console.error("Erro ao carregar dados:", err)
@@ -356,6 +368,67 @@ export default function Home() {
       </header>
       <div className="card shadow-lg" style={{ minHeight: '400px', display: 'flex', flexDirection: 'column', padding: '2rem' }}>{renderStep()}</div>
       <p style={{ textAlign: 'center', fontSize: '0.7rem', opacity: 0.4, marginTop: '1rem' }}>Desenvolvido para Barbearias Profissionais</p>
+
+      {/* AVISO DE INSTALAÇÃO PWA */}
+      {showInstallNotice && (
+        <div className="animate-fade-in" style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '20px',
+          right: '20px',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--primary)',
+          borderRadius: '16px',
+          padding: '1.25rem',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <button 
+            onClick={() => {
+              setShowInstallNotice(false)
+              localStorage.setItem('pwa_notice_dismissed', 'true')
+            }}
+            style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+          >
+            <X size={18} />
+          </button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <div style={{ width: '50px', height: '50px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--primary)', flexShrink: 0 }}>
+              <img src="/icon-512.png" alt="App Icon" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div>
+              <strong style={{ display: 'block', color: 'var(--primary)', fontSize: '1rem' }}>Mailson Styles no Celular</strong>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)', opacity: 0.9 }}>
+                {isIOS 
+                  ? 'Toque em compartilhar e "Adicionar à Tela de Início"' 
+                  : 'Instale nosso app para agendar ainda mais rápido!'}
+              </p>
+            </div>
+          </div>
+          
+          {isIOS ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '8px', background: 'rgba(212, 175, 55, 0.1)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--primary)' }}>
+              <Share2 size={16} /> Instrução para iPhone
+            </div>
+          ) : (
+            <button 
+              onClick={() => {
+                alert('Para instalar: Clique nos 3 pontinhos do navegador e selecione "Instalar Aplicativo" ou "Adicionar à tela inicial".')
+                setShowInstallNotice(false)
+                localStorage.setItem('pwa_notice_dismissed', 'true')
+              }}
+              className="btn btn-primary" 
+              style={{ padding: '0.6rem', fontSize: '0.9rem' }}
+            >
+              Como Instalar
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
