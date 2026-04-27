@@ -359,23 +359,62 @@ export default function Admin() {
 
       <header className="mb-6">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1>Painel Admin</h1>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <Link to="/" className="btn btn-outline" style={{ width: 'auto' }}>Ver Site</Link>
-            <button onClick={handleLogout} className="btn btn-outline" style={{ width: 'auto', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
-              <LogOut size={18} /> Sair
+          <h1 style={{ fontSize: '1.3rem' }}>Painel Admin</h1>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Link to="/" className="btn btn-outline" style={{ width: 'auto', padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}>Ver Site</Link>
+            <button onClick={handleLogout} className="btn btn-outline" style={{ width: 'auto', padding: '0.5rem 0.75rem', fontSize: '0.8rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+              <LogOut size={16} /> Sair
             </button>
           </div>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1.5rem' }}>
-          <button onClick={() => setTab('agenda')} className={`btn ${tab === 'agenda' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>📋 Agenda</button>
-          <button onClick={() => setTab('espera')} className={`btn ${tab === 'espera' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>⏳ Espera</button>
-          <button onClick={() => setTab('clientes')} className={`btn ${tab === 'clientes' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>👥 Clientes</button>
-          <button onClick={() => setTab('servicos')} className={`btn ${tab === 'servicos' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>✂️ Serviços</button>
-          <button onClick={() => setTab('barbeiros')} className={`btn ${tab === 'barbeiros' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>🧔 Barbeiros</button>
-          <button onClick={() => setTab('expediente')} className={`btn ${tab === 'expediente' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>📅 Expediente</button>
-          <button onClick={() => setTab('bloqueios')} className={`btn ${tab === 'bloqueios' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>🚫 Bloqueios</button>
-          <button onClick={() => setTab('ajustes')} className={`btn ${tab === 'ajustes' ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', padding: '0.6rem 1rem' }}>⚙️ Ajustes</button>
+
+        {/* Barra de Navegação Mobile Profissional */}
+        <div style={{
+          display: 'flex',
+          overflowX: 'auto',
+          gap: '0',
+          marginTop: '1.25rem',
+          borderBottom: '2px solid rgba(255,255,255,0.07)',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          {[
+            { key: 'agenda',     label: 'Agenda',     icon: '📋' },
+            { key: 'espera',     label: 'Espera',     icon: '⏳' },
+            { key: 'clientes',   label: 'Clientes',   icon: '👥' },
+            { key: 'servicos',   label: 'Serviços',   icon: '✂️' },
+            { key: 'barbeiros',  label: 'Barbeiros',  icon: '🧔' },
+            { key: 'expediente', label: 'Expediente', icon: '📅' },
+            { key: 'bloqueios',  label: 'Bloqueios',  icon: '🚫' },
+            { key: 'ajustes',    label: 'Ajustes',    icon: '⚙️' },
+          ].map(({ key, label, icon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{
+                flexShrink: 0,
+                background: 'transparent',
+                border: 'none',
+                borderBottom: tab === key ? '3px solid var(--primary)' : '3px solid transparent',
+                color: tab === key ? 'var(--primary)' : 'var(--text-muted)',
+                padding: '0.6rem 1rem',
+                fontSize: '0.82rem',
+                fontWeight: tab === key ? '700' : '400',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '3px',
+                marginBottom: '-2px'
+              }}
+            >
+              <span style={{ fontSize: '1.1rem' }}>{icon}</span>
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
       </header>
 
