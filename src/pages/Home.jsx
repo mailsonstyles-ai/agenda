@@ -306,13 +306,12 @@ export default function Home() {
                               <button onClick={async () => {
                                 const cleanPhone = whatsappCentral.replace(/\D/g, '')
                                 
-                                console.log("Tentando salvar na lista de espera:", {
-                                  nome: formData.cliente_nome,
-                                  whats: formData.cliente_whatsapp,
-                                  data: formData.data,
-                                  barbeiro: formData.barbeiro_id
-                                });
-                                
+                                // Atualiza o nome do cliente na base principal também ao entrar na espera
+                                await supabase.from('clientes').upsert({ 
+                                  whatsapp: formData.cliente_whatsapp, 
+                                  nome: formData.cliente_nome 
+                                })
+
                                 const { error } = await supabase.from('lista_espera').insert([{
                                   cliente_nome: formData.cliente_nome,
                                   cliente_whatsapp: formData.cliente_whatsapp,
