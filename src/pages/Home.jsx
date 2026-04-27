@@ -82,8 +82,12 @@ export default function Home() {
         const { data: blockedHours } = await supabase.from('bloqueios_horarios').select('hora').eq('barbeiro_id', formData.barbeiro_id).eq('data', formData.data)
         const listBlockedHours = blockedHours?.map(bh => bh.hora) || []
 
+        // INTERVALO DINÂMICO: Busca o menor tempo de serviço cadastrado para definir o "passo" da agenda
+        const { data: sData } = await supabase.from('servicos').select('duracao_minutos')
+        const minDuration = sData && sData.length > 0 ? Math.min(...sData.map(s => s.duracao_minutos)) : 30
+        
         const slots = []
-        const step = 10 
+        const step = minDuration 
 
         const generateFromPeriod = (startStr, endStr) => {
           let current = parse(startStr, 'HH:mm', new Date())
