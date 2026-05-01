@@ -25,6 +25,8 @@ export default function Admin() {
   
   const [whatsappCentral, setWhatsappCentral] = useState('')
   const [avisoTexto, setAvisoTexto] = useState('')
+  const [nomeSite, setNomeSite] = useState('')
+  const [logoUrl, setLogoUrl] = useState('')
   const [savingConfig, setSavingConfig] = useState(false)
   
   // Modal de Avisos
@@ -125,6 +127,8 @@ export default function Admin() {
       if (configData) {
         setWhatsappCentral(configData.whatsapp_central || '')
         setAvisoTexto(configData.aviso_texto || '')
+        setNomeSite(configData.nome_site || '')
+        setLogoUrl(configData.logo_url || '')
       }
 
       const { data: cData } = await supabase.from('clientes').select('*').order('nome')
@@ -159,7 +163,17 @@ export default function Admin() {
     }
   }
 
-  useEffect(() => { fetchData() }, [tab, date, selectedBarbeiro])
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  useEffect(() => {
+    if (tab) fetchData()
+  }, [tab, date, selectedBarbeiro])
+
+  useEffect(() => {
+    document.title = nomeSite ? `${nomeSite} - Admin` : 'Admin'
+  }, [nomeSite])
 
   const formatPhone = (v) => {
     if (!v) return ''
@@ -337,9 +351,73 @@ export default function Admin() {
 
   const handleSaveConfig = async () => {
     setSavingConfig(true)
-    const { error } = await supabase.from('configuracoes').upsert({ id: 'config', whatsapp_central: whatsappCentral, aviso_texto: avisoTexto })
-    setSavingConfig(false)
-    if (!error) setModal({ show: true, title: 'Sucesso', message: 'Ajustes salvos!', type: 'success' })
+    try {
+      await supabase.from('configuracoes').upsert({
+        id: 'config',
+        nome_site: nomeSite,
+        whatsapp_central: whatsappCentral,
+        aviso_texto: avisoTexto,
+        logo_url: logoUrl
+      })
+      setModal({ show: true, title: 'Salvo!', message: 'Configurações salvas com sucesso.', type: 'success' })
+      fetchData()
+    } catch (err) {
+      console.error(err)
+      setModal({ show: true, title: 'Erro', message: 'Não foi possível salvar.', type: 'error' })
+    } finally {
+      setSavingConfig(false)
+    }
+  }
+
+  const handleUploadLogo = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Limite de tamanho: 500KB para economizar banda e espaço
+    if (file.size > 500 * 1024) {
+      return setModal({ show: true, title: 'Arquivo muito grande', message: 'O logo deve ter no máximo 500KB para garantir a velocidade do site.', type: 'warning' })
+    }
+
+    setLoading(true)
+    try {
+      const fileName = `logo_${Date.now()}_${file.name}`
+      const { data, error } = await supabase.storage.from('logos').upload(fileName, file)
+
+      if (error) throw error
+
+      const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(fileName)
+      setLogoUrl(publicUrl)
+      
+      // Atualiza no banco imediatamente
+      await supabase.from('configuracoes').upsert({ id: 'config', logo_url: publicUrl })
+      setModal({ show: true, title: 'Sucesso', message: 'Logo enviado com sucesso!', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      setModal({ show: true, title: 'Erro', message: 'Falha ao enviar a imagem.', type: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRemoveLogo = async () => {
+    if (!confirm('Deseja realmente remover o logo do site?')) return
+    setLoading(true)
+    try {
+      // Extrai o nome do arquivo da URL para deletar do Storage
+      const fileName = logoUrl.split('/').pop()
+      if (fileName) {
+        await supabase.storage.from('logos').remove([fileName])
+      }
+      
+      setLogoUrl('')
+      await supabase.from('configuracoes').upsert({ id: 'config', logo_url: '' })
+      setModal({ show: true, title: 'Sucesso', message: 'Logo removido com sucesso!', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      setModal({ show: true, title: 'Erro', message: 'Falha ao remover a imagem.', type: 'error' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -772,15 +850,37 @@ export default function Admin() {
         <div className="animate-fade-in">
           <div className="card">
             <h3>⚙️ Ajustes</h3>
+            <label>Logo do Site</label>
+            <div className="mb-4">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
+                {logoUrl && (
+                  <div style={{ position: 'relative' }}>
+                    <img src={logoUrl} alt="Logo" style={{ width: '50px', height: '50px', objectFit: 'contain', borderRadius: '8px', border: '1px solid var(--primary)' }} />
+                    <button 
+                      onClick={handleRemoveLogo} 
+                      style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+                    >
+                      X
+                    </button>
+                  </div>
+                )}
+                <input type="file" accept="image/*" onChange={handleUploadLogo} style={{ width: 'auto', fontSize: '0.8rem' }} />
+              </div>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>
+                💡 Recomendado: PNG ou JPG, máximo 500KB. Dimensões ideais: 350px largura x 150px altura.
+              </p>
+            </div>
+            <label>Nome do Site</label>
+            <input placeholder="Nome do site" value={nomeSite} onChange={e => setNomeSite(e.target.value)} className="mb-4" />
             <label>WhatsApp Central</label>
-            <input placeholder="Ex: (11) 98888-7777" value={formatPhone(whatsappCentral)} onChange={(e) => setWhatsappCentral(e.target.value.replace(/\D/g, '').slice(0, 11))} className="mb-4" />
+            <input placeholder="Ex: (11) 98888-7777" value={formatPhone(whatsappCentral)} onChange={e => setWhatsappCentral(e.target.value.replace(/\D/g, '').slice(0, 11))} className="mb-4" />
             <label>Aviso para Clientes</label>
-            <textarea placeholder="Mensagem da tela inicial..." value={avisoTexto} onChange={(e) => setAvisoTexto(e.target.value)} rows={3} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
+            <textarea placeholder="Mensagem da tela inicial..." value={avisoTexto} onChange={e => setAvisoTexto(e.target.value)} rows={3} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
             <button onClick={handleSaveConfig} className="btn btn-primary mt-6" disabled={savingConfig}><Save size={18} /> Salvar</button>
           </div>
         </div>
       )}
-      <style dangerouslySetInnerHTML={{ __html: `.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; } @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }`}} />
+      <style dangerouslySetInnerHTML={{ __html: `.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; } @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }` }} />
     </div>
   )
 }

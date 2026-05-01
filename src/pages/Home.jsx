@@ -6,11 +6,14 @@ import { format, addMinutes, parse, isAfter, isBefore, isEqual, getDay } from 'd
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1) // 1: Whats, 2: Nome, 3: Serviço, 4: Barbeiro, 5: Data/Hora, 6: Sucesso
   const [loading, setLoading] = useState(false)
+  const [loadingPage, setLoadingPage] = useState(true)
   
   const [barbeiros, setBarbeiros] = useState([])
   const [servicos, setServicos] = useState([])
   const [whatsappCentral, setWhatsappCentral] = useState('')
   const [avisoTexto, setAvisoTexto] = useState('')
+  const [nomeSite, setNomeSite] = useState('')
+  const [logoUrl, setLogoUrl] = useState('')
   const [availableSlots, setAvailableSlots] = useState([])
   const [dayIsClosed, setDayIsClosed] = useState(false)
   
@@ -40,6 +43,9 @@ export default function Home() {
         if (configData) {
           setWhatsappCentral(configData.whatsapp_central)
           setAvisoTexto(configData.aviso_texto || '')
+          setNomeSite(configData.nome_site || '')
+          setLogoUrl(configData.logo_url || '')
+          document.title = configData.nome_site || 'Agendamento'
         }
 
         // Lógica PWA
@@ -52,6 +58,8 @@ export default function Home() {
         }
       } catch (err) {
         console.error("Erro ao carregar dados:", err)
+      } finally {
+        setLoadingPage(false)
       }
     }
     loadData()
@@ -280,6 +288,13 @@ export default function Home() {
                     <ArrowLeft onClick={() => setCurrentStep(4)} style={{ cursor: 'pointer' }} />
                     <h2 style={{ margin: 0 }}>Para quando?</h2>
                   </div>
+                  <div style={{ background: 'rgba(212, 175, 55, 0.1)', border: '1px solid var(--primary)', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ background: 'var(--primary)', width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.75rem', color: '#000' }}>{formData.barbeiro_nome?.charAt(0)}</div>
+                      <div><span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Barbeiro selecionado</span><div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{formData.barbeiro_nome}</div></div>
+                    </div>
+                    <button onClick={() => setCurrentStep(4)} style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.7rem', cursor: 'pointer' }}>Trocar</button>
+                  </div>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                     Escolha o dia que deseja o serviço:
                   </label>
@@ -371,12 +386,24 @@ export default function Home() {
 
   return (
     <div className="container">
-      <header className="text-center mb-6">
-        <h1 style={{ letterSpacing: '2px', textTransform: 'uppercase' }}>Mailson Styles</h1>
-        <div style={{ width: '50px', height: '2px', background: 'var(--primary)', margin: '0 auto' }}></div>
-      </header>
-      <div className="card shadow-lg" style={{ minHeight: '400px', display: 'flex', flexDirection: 'column', padding: '2rem' }}>{renderStep()}</div>
-      <p style={{ textAlign: 'center', fontSize: '0.7rem', opacity: 0.4, marginTop: '1rem' }}>Desenvolvido para Barbearias Profissionais</p>
+      {loadingPage ? (
+        <div className="text-center" style={{ padding: '4rem' }}>
+          <div style={{ color: 'var(--primary)', fontSize: '1.2rem' }}>Carregando...</div>
+        </div>
+      ) : (
+      <>
+        <header className="text-center mb-6">
+          {logoUrl ? (
+            <img src={logoUrl} alt={nomeSite} style={{ maxHeight: '150px', maxWidth: '350px', objectFit: 'contain', margin: '0 auto 1.5rem', display: 'block' }} />
+          ) : nomeSite ? (
+            <>
+              <h1 style={{ letterSpacing: '2px', textTransform: 'uppercase' }}>{nomeSite}</h1>
+              <div style={{ width: '50px', height: '2px', background: 'var(--primary)', margin: '0 auto' }}></div>
+            </>
+          ) : null}
+        </header>
+        <div className="card shadow-lg" style={{ minHeight: '400px', display: 'flex', flexDirection: 'column', padding: '2rem' }}>{renderStep()}</div>
+        <p style={{ textAlign: 'center', fontSize: '0.7rem', opacity: 0.4, marginTop: '1rem' }}>Desenvolvido para Barbearias Profissionais</p>
 
       {/* AVISO DE INSTALAÇÃO PWA */}
       {showInstallNotice && (
@@ -410,7 +437,7 @@ export default function Home() {
               <img src="/icon-512.png" alt="App Icon" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <div>
-              <strong style={{ display: 'block', color: 'var(--primary)', fontSize: '1rem' }}>Mailson Styles no Celular</strong>
+              <strong style={{ display: 'block', color: 'var(--primary)', fontSize: '1rem' }}>{nomeSite || 'nosso app'} no Celular</strong>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)', opacity: 0.9 }}>
                 {isIOS 
                   ? 'Toque em compartilhar e "Adicionar à Tela de Início"' 
@@ -437,6 +464,8 @@ export default function Home() {
             </button>
           )}
         </div>
+      )}
+      </>
       )}
     </div>
   )
