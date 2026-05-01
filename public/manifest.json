@@ -1,6 +1,6 @@
 {
-  "short_name": "MailsonStyles",
-  "name": "Mailson Styles - Agendamento",
+  "short_name": "Agenda",
+  "name": "Agendamento",
   "icons": [
     {
       "src": "/icon-512.png",
@@ -14,5 +14,5 @@
   "display": "standalone",
   "scope": "/",
   "theme_color": "#d4af37",
-  "description": "Agendamento profissional para barbearia"
+  "description": "Agendamento profissional"
 }
