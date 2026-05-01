@@ -152,7 +152,10 @@ Se você for replicar este projeto, siga esta ordem exata:
 - Em `useEffect`, sempre chamar `fetchData()` ao montar o componente para carregar dados.
 - Ao adicionar funções como `handleSaveConfig`, definir antes do JSX para evitar erros silenciosos.
 - Verificar build com `npm run build` após qualquer modificação significativa.
+- **Expediente:** Cada dia da semana tem registro separado. Ao carregar, usar `.select('*').eq('barbeiro_id', selectedBarbeiro)` (sem `.maybeSingle()`) para buscar todos os dias.
+- **Expediente - ativo_1/ativo_2:** Usar `!!inicio_1` e `!!inicio_2` para definir se turnos estão ativos (não usar `.checkbox` marcada por padrão).
+- **Expediente - selectedDays:** Buscar dias onde `is_aberto = true` e usar `.map(e => e.dia_semana)` para obter os dias abertos.
 
 **Nome da Skill:** Skill Profissional barbearia  
-**Versão:** 1.2 (Blueprint Técnico)  
+**Versão:** 1.3 (Blueprint Técnico)  
 **Status:** Produção / Referência de IA
