@@ -146,8 +146,24 @@ export default function Admin() {
       }
 
       if (tab === 'expediente' && selectedBarbeiro) {
-        const { data: expData } = await supabase.from('expediente').select('dia_semana').eq('barbeiro_id', selectedBarbeiro).eq('is_aberto', true)
-        if (expData) setSelectedDays(expData.map(e => e.dia_semana))
+        const { data: expDataAll } = await supabase.from('expediente').select('*').eq('barbeiro_id', selectedBarbeiro)
+        if (expDataAll && expDataAll.length > 0) {
+          const openDays = expDataAll.filter(e => e.is_aberto).map(e => e.dia_semana)
+          setSelectedDays(openDays)
+          const sample = expDataAll[0]
+          setBulkHours({
+            inicio_1: sample.inicio_1 || '08:00',
+            fim_1: sample.fim_1 || '12:00',
+            inicio_2: sample.inicio_2 || '14:00',
+            fim_2: sample.fim_2 || '19:00',
+            is_aberto: sample.is_aberto || false,
+            ativo_1: !!sample.inicio_1,
+            ativo_2: !!sample.inicio_2
+          })
+        } else {
+          setSelectedDays([])
+          setBulkHours({ inicio_1: '08:00', fim_1: '12:00', inicio_2: '14:00', fim_2: '19:00', is_aberto: true, ativo_1: true, ativo_2: true })
+        }
       }
 
       if (tab === 'bloqueios' && selectedBarbeiro) {
